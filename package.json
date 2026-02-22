@@ -1,5 +1,5 @@
 {
-  "name": "uiu-section-selector-backend",
+  "name": "section-selector-backend",
   "version": "1.0.0",
   "description": "UIU BSCSE section scraper and routine API",
   "main": "server.js",
