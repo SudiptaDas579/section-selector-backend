@@ -1,5 +1,6 @@
 const express = require("express");
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
@@ -39,14 +40,16 @@ const writeJSON = (file, data)     => fs.writeFileSync(file, JSON.stringify(data
 
 // ── Scraper ───────────────────────────────────────────────────────────────────
 async function scrapeSections() {
+  // Use system Chrome locally, sparticuz Chromium on Render
+  const isCloud = !!process.env.RENDER;
+  const executablePath = isCloud
+    ? await chromium.executablePath()
+    : (process.env.PUPPETEER_EXECUTABLE_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe");
+
   const browser = await puppeteer.launch({
     headless: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",  // required on Render/Railway
-      "--disable-gpu",
-    ],
+    executablePath,
+    args: isCloud ? chromium.args : ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
   try {
