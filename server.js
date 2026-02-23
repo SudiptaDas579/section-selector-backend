@@ -1,6 +1,5 @@
 const express = require("express");
-const puppeteer = require("puppeteer-core");
-const chromium = require("@sparticuz/chromium");
+const puppeteer = require("puppeteer");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
@@ -40,33 +39,16 @@ const writeJSON = (file, data)     => fs.writeFileSync(file, JSON.stringify(data
 
 // ── Scraper ───────────────────────────────────────────────────────────────────
 async function scrapeSections() {
-  // Use sparticuz Chromium on Render, local Chrome on dev
-  const isCloud = !!process.env.RENDER;
-
-  let launchOptions;
-  if (isCloud) {
-    const executablePath = await chromium.executablePath();
-    console.log("🔍 Chromium path:", executablePath);
-    launchOptions = {
-      headless: chromium.headless,
-      executablePath,
-      args: [
-        ...chromium.args,
-        "--disable-dev-shm-usage",
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-      ],
-      defaultViewport: chromium.defaultViewport,
-    };
-  } else {
-    launchOptions = {
-      headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    };
-  }
-
-  const browser = await puppeteer.launch(launchOptions);
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
+      "--single-process",
+    ],
+  });
 
   try {
     const page = await browser.newPage();
