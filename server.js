@@ -40,17 +40,33 @@ const writeJSON = (file, data)     => fs.writeFileSync(file, JSON.stringify(data
 
 // ── Scraper ───────────────────────────────────────────────────────────────────
 async function scrapeSections() {
-  // Use system Chrome locally, sparticuz Chromium on Render
+  // Use sparticuz Chromium on Render, local Chrome on dev
   const isCloud = !!process.env.RENDER;
-  const executablePath = isCloud
-    ? await chromium.executablePath()
-    : (process.env.PUPPETEER_EXECUTABLE_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe");
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    executablePath,
-    args: isCloud ? chromium.args : ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  let launchOptions;
+  if (isCloud) {
+    const executablePath = await chromium.executablePath();
+    console.log("🔍 Chromium path:", executablePath);
+    launchOptions = {
+      headless: chromium.headless,
+      executablePath,
+      args: [
+        ...chromium.args,
+        "--disable-dev-shm-usage",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+      ],
+      defaultViewport: chromium.defaultViewport,
+    };
+  } else {
+    launchOptions = {
+      headless: true,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    };
+  }
+
+  const browser = await puppeteer.launch(launchOptions);
 
   try {
     const page = await browser.newPage();
