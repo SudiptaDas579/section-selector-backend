@@ -1,0 +1,43 @@
+name: Scrape UIU Sections
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"  # every 12 hours automatically
+  workflow_dispatch:          # manual trigger from GitHub Actions tab
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Chrome for Puppeteer
+        run: npx puppeteer browsers install chrome
+
+      - name: Run scraper
+        env:
+          UIU_USER: ${{ secrets.UIU_USER }}
+          UIU_PASS: ${{ secrets.UIU_PASS }}
+          CI: true
+        run: node scrape.js
+
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/sections.json
+          git diff --staged --quiet || git commit -m "chore: update sections data [skip ci]"
+          git push
+
+      - name: Trigger Render redeploy
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
